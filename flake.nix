@@ -24,6 +24,7 @@
 {
   # This description helps others understand the purpose of this Flake
   description = "A flake that reports the OS using separate scripts with optional CUDA support and unfree packages allowed, now using uv for Python dependencies.";
+  allowUnsupportedSystem = true; 
   
   # Inputs are the dependencies for our Flake
   # They're pinned to specific versions to ensure reproducibility
