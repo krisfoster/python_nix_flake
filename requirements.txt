@@ -5,4 +5,5 @@ nbstripout
 numpy
 polars
 requests
-
+cairosvg
+pil

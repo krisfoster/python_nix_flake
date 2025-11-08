@@ -96,39 +96,6 @@
               echo "Warning: An error occurred during uv pip setup."
           fi
 
-          # Check if numpy is properly installed
-          if python -c "import numpy" 2>/dev/null; then
-            echo "- numpy is importable (good to go!)"
-            echo
-            echo "To start JupyterLab, type: start"
-            echo "To stop JupyterLab, type: stop"
-            echo
-          else
-            echo "Error: numpy could not be imported. Check your installation."
-          fi
-
-          # Create convenience scripts for managing JupyterLab
-          # Note: We've disabled token and password for easier access, especially in WSL environments
-          cat << EOF > .venv/bin/start
-          #!/bin/sh
-          echo "A JupyterLab tab will open in your default browser."
-          tmux kill-session -t jupyter 2>/dev/null || echo "No tmux session named 'jupyter' is running."
-          tmux new-session -d -s jupyter 'source .venv/bin/activate && jupyter lab --NotebookApp.token="" --NotebookApp.password="" --NotebookApp.disable_check_xsrf=True'
-          echo "If no tab opens, visit http://localhost:8888"
-          echo "To view JupyterLab server: tmux attach -t jupyter"
-          echo "To stop JupyterLab server: stop"
-          EOF
-          chmod +x .venv/bin/start
-
-          cat << EOF > .venv/bin/stop
-          #!/bin/sh
-          echo "Stopping tmux session 'jupyter'..."
-          tmux kill-session -t jupyter 2>/dev/null || echo "No tmux session named 'jupyter' is running."
-          echo "The tmux session 'jupyter' has been stopped."
-          EOF
-          chmod +x .venv/bin/stop
-        '';
-
         # Base shell hook that just sets up the environment without any output
         baseEnvSetup = pkgs: ''
           # Set up the Python virtual environment with uv
@@ -136,30 +103,16 @@
           export VIRTUAL_ENV="$(pwd)/.venv"
           export PATH="$VIRTUAL_ENV/bin:$PATH"
           export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath commonPackages}:$LD_LIBRARY_PATH
-
-          # Set up CUDA env vars if available (no output message)
-          if command -v nvidia-smi &> /dev/null; then
-            export CUDA_HOME=${pkgs.cudatoolkit}
-            export PATH=$CUDA_HOME/bin:$PATH
-            export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
-          fi
         '';
 
         # Function to create shells for each OS
         mkLinuxShells = pkgs: {
           # Default shell with the full interactive setup for human use
           default = pkgs.mkShell {
-            buildInputs = commonPackages ++ (with pkgs; pkgs.lib.optionals (builtins.pathExists "/usr/bin/nvidia-smi") cudaPackages);
+            buildInputs = commonPackages ++ (with pkgs; pkgs.lib.optionals);
             shellHook = ''
               ${baseEnvSetup pkgs}
               
-              # Set up CUDA if available (with output message)
-              if command -v nvidia-smi &> /dev/null; then
-                echo "CUDA hardware detected."
-              else
-                echo "No CUDA hardware detected."
-              fi
-
               # Run the full interactive script
               ${runScript}/bin/run-script
             '';
@@ -167,7 +120,7 @@
           
           # Quiet shell for AI assistants, automation and scripting
           quiet = pkgs.mkShell {
-            buildInputs = commonPackages ++ (with pkgs; pkgs.lib.optionals (builtins.pathExists "/usr/bin/nvidia-smi") cudaPackages);
+            buildInputs = commonPackages ++ (with pkgs; pkgs.lib.optionals);
             shellHook = ''
               ${baseEnvSetup pkgs}
               # Minimal confirmation message
