@@ -1,9 +1,8 @@
 httpx
-jupyter-ai[all]
-jupyterlab
+marimo[recommended]
 mcp[cli]
 nbstripout
 numpy
-pandas
+polars
 requests
 
